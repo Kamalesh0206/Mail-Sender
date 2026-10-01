@@ -28,53 +28,52 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   isScanning
 }) => {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Welcome Banner */}
       <div className="glass-card" style={{
-        padding: "24px 28px",
+        padding: "20px 22px",
         background: "linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(236, 72, 153, 0.08) 100%)",
         border: "1px solid rgba(99, 102, 241, 0.25)",
         display: "flex",
+        flexDirection: "row",
+        flexWrap: "wrap",
         justifyContent: "space-between",
-        alignItems: "center"
+        alignItems: "center",
+        gap: 16
       }}>
-        <div>
+        <div style={{ minWidth: 260, flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
             <span style={{ fontSize: 20 }}>👋</span>
-            <h1 style={{ fontSize: 22, margin: 0 }}>Good Day! Welcome to WishMail AI</h1>
+            <h1 style={{ fontSize: "clamp(18px, 4vw, 22px)", margin: 0 }}>Good Day! Welcome to WishMail AI</h1>
           </div>
-          <p style={{ fontSize: 14, color: "var(--text-secondary)", margin: 0 }}>
-            Personal wishes. Meaningful quotes. Automatically delivered. (Timezone: {data?.timezone || "Asia/Kolkata"})
+          <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>
+            Personal wishes. Meaningful quotes. Automatically delivered. ({data?.timezone || "Asia/Kolkata"})
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn-secondary" onClick={() => onNavigate("wishes")} style={{ fontSize: 13 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <button className="btn-secondary" onClick={() => onNavigate("wishes")} style={{ fontSize: 13, padding: "8px 14px", flex: "1 1 auto" }}>
             <Heart size={14} style={{ color: "#ec4899" }} />
             <span>Wishes</span>
           </button>
-          <button className="btn-secondary" onClick={() => onNavigate("quotes")} style={{ fontSize: 13 }}>
+          <button className="btn-secondary" onClick={() => onNavigate("quotes")} style={{ fontSize: 13, padding: "8px 14px", flex: "1 1 auto" }}>
             <Quote size={14} style={{ color: "#a5b4fc" }} />
             <span>Quotes</span>
           </button>
-          <button className="btn-primary" onClick={onRunScan} disabled={isScanning} style={{ fontSize: 13 }}>
+          <button className="btn-primary" onClick={onRunScan} disabled={isScanning} style={{ fontSize: 13, padding: "8px 14px", flex: "1 1 auto" }}>
             <Sparkles size={14} />
-            <span>{isScanning ? "Checking..." : "Run Check Now"}</span>
+            <span>{isScanning ? "Checking..." : "Run Check"}</span>
           </button>
         </div>
       </div>
 
       {/* 7 Dashboard Cards */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-        gap: 16
-      }}>
+      <div className="stats-grid-responsive">
         {/* Card 1: Today's Wishes */}
         <div
           className="glass-card"
           onClick={() => onNavigate("wishes")}
-          style={{ padding: "18px 20px", cursor: "pointer", transition: "var(--transition-fast)" }}
+          style={{ padding: "14px 16px", cursor: "pointer", transition: "var(--transition-fast)" }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>TODAY'S WISHES</span>
@@ -212,19 +211,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* TODAY'S SCHEDULE Table */}
-      <div className="glass-card" style={{ padding: 24 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+      <div className="glass-card" style={{ padding: "18px 20px" }}>
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 16
+        }}>
           <div>
-            <h2 style={{ fontSize: 18, margin: 0, display: "flex", alignItems: "center", gap: 10 }}>
+            <h2 style={{ fontSize: 17, margin: 0, display: "flex", alignItems: "center", gap: 10 }}>
               <span>TODAY'S SCHEDULE</span>
-              <span className="badge badge-primary">{data?.today_schedule?.length ?? 0} Scheduled</span>
+              <span className="badge badge-primary">{data?.today_schedule?.length ?? 0}</span>
             </h2>
-            <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "4px 0 0 0" }}>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "4px 0 0 0" }}>
               Chronological schedule of today's automated wishes and quote broadcasts.
             </p>
           </div>
 
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             <button className="btn-secondary" onClick={() => onNavigate("wishes")} style={{ fontSize: 12, padding: "6px 12px" }}>
               <Plus size={13} />
               <span>Add Wish</span>
@@ -237,13 +243,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {(!data?.today_schedule || data.today_schedule.length === 0) ? (
-          <div style={{ textAlign: "center", padding: "40px 16px", color: "var(--text-muted)" }}>
-            <Calendar size={36} style={{ margin: "0 auto 12px auto", opacity: 0.4 }} />
-            <p style={{ fontSize: 14 }}>No events scheduled for today. Run the daily check or schedule a quote.</p>
+          <div style={{ textAlign: "center", padding: "36px 16px", color: "var(--text-muted)" }}>
+            <Calendar size={32} style={{ margin: "0 auto 10px auto", opacity: 0.4 }} />
+            <p style={{ fontSize: 13 }}>No events scheduled for today. Run the daily check or schedule a quote.</p>
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 14 }}>
+          <div className="table-responsive">
+            <table style={{ width: "100%", minWidth: 520, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
               <thead>
                 <tr style={{
                   borderBottom: "1px solid var(--border-subtle)",

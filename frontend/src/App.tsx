@@ -19,7 +19,19 @@ import {
   EmailHistoryItem,
   AppSettings
 } from "./api";
-import { CheckCircle2, AlertTriangle, Info, X, Sparkles } from "lucide-react";
+import {
+  CheckCircle2,
+  AlertTriangle,
+  Info,
+  X,
+  Sparkles,
+  Menu,
+  LayoutDashboard,
+  Heart,
+  Quote,
+  Users,
+  Settings as SettingsIcon
+} from "lucide-react";
 
 interface Toast {
   id: string;
@@ -31,6 +43,7 @@ type TabType = "dashboard" | "wishes" | "quotes" | "friends" | "calendar" | "his
 
 export function App() {
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Core data states
   const [dashboard, setDashboard] = useState<DashboardOverview | null>(null);
@@ -352,8 +365,8 @@ export function App() {
   );
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg-primary)" }}>
-      {/* Sidebar Navigation */}
+    <div style={{ display: "flex", minHeight: "100vh", width: "100%", background: "var(--bg-primary)" }}>
+      {/* Responsive Sidebar (Sticky on Desktop, Off-Canvas Drawer on Mobile) */}
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -361,10 +374,19 @@ export function App() {
         onRunScan={handleRunScan}
         isScanning={isScanning}
         onOpenTestEmail={() => setIsTestEmailOpen(true)}
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
       />
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflowX: "hidden" }}>
+      <div style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        minWidth: 0,
+        width: "100%",
+        overflowX: "hidden"
+      }}>
         {/* Top Header Bar */}
         <header style={{
           height: 60,
@@ -372,24 +394,36 @@ export function App() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 32px",
-          background: "rgba(12, 17, 29, 0.8)",
-          backdropFilter: "blur(12px)",
+          padding: "0 18px",
+          background: "rgba(12, 17, 29, 0.92)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
           position: "sticky",
           top: 0,
           zIndex: 40
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 13, color: "var(--text-muted)", textTransform: "capitalize" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Mobile Hamburger Drawer Toggle */}
+            <button
+              id="mobile-menu-btn"
+              className="btn-icon mobile-only"
+              onClick={() => setIsMobileMenuOpen(true)}
+              aria-label="Open sidebar menu"
+              style={{ padding: 6 }}
+            >
+              <Menu size={22} />
+            </button>
+
+            <span className="desktop-only" style={{ fontSize: 13, color: "var(--text-muted)", textTransform: "capitalize" }}>
               WishMail AI /
             </span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", textTransform: "capitalize" }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", textTransform: "capitalize" }}>
               {activeTab === "friends" ? "Friends & Groups" : activeTab === "history" ? "Email History" : activeTab}
             </span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="desktop-only" style={{
               display: "flex",
               alignItems: "center",
               gap: 8,
@@ -406,7 +440,7 @@ export function App() {
             <button
               onClick={() => setIsTestEmailOpen(true)}
               className="btn-secondary"
-              style={{ fontSize: 12, padding: "5px 12px" }}
+              style={{ fontSize: 12, padding: "6px 12px", minHeight: 32 }}
             >
               Test Email
             </button>
@@ -414,13 +448,17 @@ export function App() {
         </header>
 
         {/* Tab Views */}
-        <main style={{
-          flex: 1,
-          padding: "32px 36px 64px 36px",
-          maxWidth: 1380,
-          width: "100%",
-          margin: "0 auto"
-        }}>
+        <main
+          className="main-content-wrapper"
+          style={{
+            flex: 1,
+            padding: "24px 20px 48px 20px",
+            maxWidth: 1380,
+            width: "100%",
+            margin: "0 auto",
+            minWidth: 0
+          }}
+        >
           {activeTab === "dashboard" && (
             <DashboardView
               data={dashboard}
@@ -497,9 +535,72 @@ export function App() {
             />
           )}
         </main>
+
+        {/* Mobile Bottom Navigation Bar (iOS / Android App Experience) */}
+        <nav className="mobile-bottom-nav">
+          <button
+            className={`mobile-bottom-nav-item ${activeTab === "dashboard" ? "active" : ""}`}
+            onClick={() => setActiveTab("dashboard")}
+            aria-label="Dashboard"
+          >
+            <LayoutDashboard size={20} />
+            <span>Dashboard</span>
+          </button>
+          <button
+            className={`mobile-bottom-nav-item ${activeTab === "wishes" ? "active" : ""}`}
+            onClick={() => setActiveTab("wishes")}
+            aria-label="Wishes"
+          >
+            <div style={{ position: "relative", display: "inline-flex" }}>
+              <Heart size={20} />
+              {dashboard?.pending_approval_count && dashboard.pending_approval_count > 0 ? (
+                <span style={{
+                  position: "absolute",
+                  top: -4,
+                  right: -8,
+                  background: "var(--status-warning)",
+                  color: "#000",
+                  fontSize: 9,
+                  fontWeight: 800,
+                  borderRadius: "var(--radius-full)",
+                  padding: "0 4px",
+                  minWidth: 14,
+                  textAlign: "center"
+                }}>
+                  {dashboard.pending_approval_count}
+                </span>
+              ) : null}
+            </div>
+            <span>Wishes</span>
+          </button>
+          <button
+            className={`mobile-bottom-nav-item ${activeTab === "quotes" ? "active" : ""}`}
+            onClick={() => setActiveTab("quotes")}
+            aria-label="Quotes"
+          >
+            <Quote size={20} />
+            <span>Quotes</span>
+          </button>
+          <button
+            className={`mobile-bottom-nav-item ${activeTab === "friends" ? "active" : ""}`}
+            onClick={() => setActiveTab("friends")}
+            aria-label="Friends"
+          >
+            <Users size={20} />
+            <span>Friends</span>
+          </button>
+          <button
+            className={`mobile-bottom-nav-item ${activeTab === "settings" ? "active" : ""}`}
+            onClick={() => setActiveTab("settings")}
+            aria-label="Settings"
+          >
+            <SettingsIcon size={20} />
+            <span>Settings</span>
+          </button>
+        </nav>
       </div>
 
-      {/* Modals */}
+      {/* Modals with Mobile-Fit Overlays */}
       <TestEmailModal
         isOpen={isTestEmailOpen}
         onClose={() => setIsTestEmailOpen(false)}

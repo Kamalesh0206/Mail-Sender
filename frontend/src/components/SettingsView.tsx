@@ -169,34 +169,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           background: "rgba(255, 255, 255, 0.02)",
           border: "1px solid var(--border-subtle)",
           borderRadius: "var(--radius-sm)",
-          padding: 18,
+          padding: "16px 18px",
           marginBottom: 16
         }}>
           {settings?.gmail_connected ? (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
               <div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Connected Google Account:</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", marginTop: 2 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginTop: 2 }}>
                   {settings.gmail_email || "Active Gmail Account"}
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button type="button" className="btn-secondary" onClick={onOpenTestEmail} style={{ fontSize: 13, padding: "8px 14px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <button type="button" className="btn-secondary" onClick={onOpenTestEmail} style={{ fontSize: 12, padding: "7px 12px" }}>
                   <Send size={13} />
-                  <span>Send Test Email</span>
+                  <span>Test Email</span>
                 </button>
-                <button type="button" className="btn-danger" onClick={handleDisconnectGoogle} style={{ fontSize: 13, padding: "8px 14px" }}>
+                <button type="button" className="btn-danger" onClick={handleDisconnectGoogle} style={{ fontSize: 12, padding: "7px 12px" }}>
                   <Power size={13} />
                   <span>Disconnect</span>
                 </button>
               </div>
             </div>
           ) : (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0, maxWidth: 520 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 14 }}>
+              <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0, maxWidth: 520, flex: 1, minWidth: 240 }}>
                 Authorize WishMail AI with your Google account via OAuth 2.0. We request the minimum required permissions to send emails and never access or store passwords.
               </p>
-              <button type="button" className="btn-primary" onClick={handleConnectGoogle} style={{ fontSize: 13, padding: "10px 18px", whiteSpace: "nowrap" }}>
+              <button type="button" className="btn-primary" onClick={handleConnectGoogle} style={{ fontSize: 13, padding: "9px 16px", whiteSpace: "nowrap" }}>
                 <ExternalLink size={14} />
                 <span>Connect Gmail</span>
               </button>
@@ -219,7 +219,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span>Timezone & Schedule</span>
           </h3>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
             <div>
               <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
                 Application Timezone
@@ -251,18 +251,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         {/* Automation Modes */}
-        <div className="glass-card" style={{ padding: 28 }}>
-          <h3 style={{ fontSize: 17, marginBottom: 18, display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="glass-card" style={{ padding: "20px 22px" }}>
+          <h3 style={{ fontSize: 17, marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
             <Sparkles size={18} style={{ color: "var(--primary)" }} />
             <span>Automation & Approval Modes</span>
           </h3>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
             <div style={{
               background: "rgba(255, 255, 255, 0.02)",
               border: "1px solid var(--border-subtle)",
               borderRadius: "var(--radius-sm)",
-              padding: 16
+              padding: 14
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <span style={{ fontWeight: 600, fontSize: 14 }}>Wishes Auto-Send</span>
@@ -284,7 +284,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               background: "rgba(255, 255, 255, 0.02)",
               border: "1px solid var(--border-subtle)",
               borderRadius: "var(--radius-sm)",
-              padding: 16
+              padding: 14
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <span style={{ fontWeight: 600, fontSize: 14 }}>Quotes Auto-Send</span>
@@ -303,10 +303,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         {/* Tone, AI Personalization & Templates */}
-        <div className="glass-card" style={{ padding: 28 }}>
-          <h3 style={{ fontSize: 17, marginBottom: 18 }}>AI & Email Content Defaults</h3>
+        <div className="glass-card" style={{ padding: "20px 22px" }}>
+          <h3 style={{ fontSize: 17, marginBottom: 16 }}>AI & Email Content Defaults</h3>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14, marginBottom: 14 }}>
             <div>
               <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
                 Default Wish Tone

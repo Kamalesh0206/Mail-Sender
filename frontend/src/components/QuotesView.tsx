@@ -263,13 +263,13 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
       {activeTab === "schedules" && (
         <div className="glass-card" style={{ overflow: "hidden" }}>
           {schedules.length === 0 ? (
-            <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-muted)" }}>
-              <Quote size={36} style={{ margin: "0 auto 12px auto", opacity: 0.4 }} />
-              <p>No quotes currently scheduled. Add or upload quotes to begin automated broadcasts.</p>
+            <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)" }}>
+              <Quote size={32} style={{ margin: "0 auto 10px auto", opacity: 0.4 }} />
+              <p style={{ fontSize: 13 }}>No quotes currently scheduled. Add or upload quotes to begin automated broadcasts.</p>
             </div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 14 }}>
+            <div className="table-responsive" style={{ margin: 0 }}>
+              <table style={{ width: "100%", minWidth: 620, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
                 <thead>
                   <tr style={{
                     borderBottom: "1px solid var(--border-subtle)",
@@ -383,7 +383,7 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
               <div>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
                   Send Date *
@@ -503,7 +503,7 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
               <div>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
                   Start Date *

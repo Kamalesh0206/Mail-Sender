@@ -63,11 +63,13 @@ export const WishPreviewModal: React.FC<WishPreviewModalProps> = ({ friendId, on
       padding: 16
     }}>
       <div className="glass-card" style={{
-        maxWidth: 600,
+        maxWidth: 540,
         width: "100%",
-        padding: 32,
+        padding: "22px 20px",
         borderRadius: "var(--radius-lg)",
-        boxShadow: "var(--shadow-lg)"
+        boxShadow: "var(--shadow-lg)",
+        maxHeight: "90dvh",
+        overflowY: "auto"
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <h2 style={{ fontSize: 20, margin: 0, display: "flex", alignItems: "center", gap: 10 }}>

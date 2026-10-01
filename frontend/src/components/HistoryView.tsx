@@ -62,25 +62,25 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ history, onRetry, isLo
 
       {/* Filter Bar */}
       <div className="glass-card" style={{
-        padding: "16px 20px",
+        padding: "12px 14px",
         display: "grid",
-        gridTemplateColumns: "2fr 1fr 1fr",
-        gap: 16,
+        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        gap: 10,
         alignItems: "center"
       }}>
         <div style={{ position: "relative" }}>
-          <Search size={16} style={{ position: "absolute", left: 14, top: 13, color: "var(--text-muted)" }} />
+          <Search size={15} style={{ position: "absolute", left: 12, top: 12, color: "var(--text-muted)" }} />
           <input
             type="text"
-            placeholder="Search recipient name, email, or subject..."
+            placeholder="Search name, email, subject..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ paddingLeft: 40 }}
+            style={{ paddingLeft: 36, fontSize: 13 }}
           />
         </div>
 
         <div>
-          <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)}>
+          <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} style={{ fontSize: 13 }}>
             <option value="">All Types (Wishes & Quotes)</option>
             <option value="WISH">💌 Wishes Only</option>
             <option value="QUOTE">💬 Quotes Only</option>
@@ -88,7 +88,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ history, onRetry, isLo
         </div>
 
         <div>
-          <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
+          <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} style={{ fontSize: 13 }}>
             <option value="">All Statuses</option>
             <option value="SENT">Sent</option>
             <option value="PENDING">Pending Approval</option>
@@ -101,13 +101,13 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ history, onRetry, isLo
       {/* History Table */}
       <div className="glass-card" style={{ overflow: "hidden" }}>
         {filteredHistory.length === 0 ? (
-          <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-muted)" }}>
-            <History size={36} style={{ margin: "0 auto 12px auto", opacity: 0.4 }} />
-            <p>No email history records found matching your filters.</p>
+          <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)" }}>
+            <History size={32} style={{ margin: "0 auto 10px auto", opacity: 0.4 }} />
+            <p style={{ fontSize: 13 }}>No email history records found matching your filters.</p>
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+          <div className="table-responsive" style={{ margin: 0 }}>
+            <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
               <thead>
                 <tr style={{
                   borderBottom: "1px solid var(--border-subtle)",

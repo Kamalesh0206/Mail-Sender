@@ -79,47 +79,48 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Calendar Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14 }}>
         <div>
-          <h1 style={{ fontSize: 24, margin: 0, display: "flex", alignItems: "center", gap: 12 }}>
-            <CalendarIcon size={24} style={{ color: "var(--primary)" }} />
+          <h1 style={{ fontSize: 22, margin: 0, display: "flex", alignItems: "center", gap: 10 }}>
+            <CalendarIcon size={22} style={{ color: "var(--primary)" }} />
             <span>Broadcast Calendar</span>
           </h1>
-          <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
+          <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
             Visual schedule of upcoming quotes and occasion wishes.
           </p>
         </div>
 
         {/* Month Navigator */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <button className="btn-secondary" onClick={handlePrevMonth} style={{ padding: "8px 12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <button className="btn-secondary" onClick={handlePrevMonth} style={{ padding: "6px 12px", minHeight: 36 }}>
             <ChevronLeft size={16} />
           </button>
-          <span style={{ fontSize: 18, fontWeight: 700, minWidth: 150, textAlign: "center" }}>
+          <span style={{ fontSize: 16, fontWeight: 700, minWidth: 140, textAlign: "center" }}>
             {monthName} {year}
           </span>
-          <button className="btn-secondary" onClick={handleNextMonth} style={{ padding: "8px 12px" }}>
+          <button className="btn-secondary" onClick={handleNextMonth} style={{ padding: "6px 12px", minHeight: 36 }}>
             <ChevronRight size={16} />
           </button>
         </div>
       </div>
 
       {/* Calendar Grid */}
-      <div className="glass-card" style={{ padding: 20 }}>
+      <div className="glass-card" style={{ padding: "14px 12px" }}>
         {/* Days of Week Header */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 10, textAlign: "center", marginBottom: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, textAlign: "center", marginBottom: 8 }}>
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-            <div key={d} style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", padding: "6px 0" }}>
-              {d}
+            <div key={d} style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", padding: "4px 0" }}>
+              <span className="desktop-only">{d}</span>
+              <span className="mobile-only">{d.slice(0, 1)}</span>
             </div>
           ))}
         </div>
 
         {/* Calendar Day Cells */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
           {/* Empty cells before month start */}
           {Array.from({ length: firstDayIndex }).map((_, i) => (
-            <div key={`empty-${i}`} style={{ minHeight: 95, background: "rgba(255, 255, 255, 0.01)", borderRadius: "var(--radius-sm)" }} />
+            <div key={`empty-${i}`} style={{ minHeight: "clamp(50px, 8vw, 90px)", background: "rgba(255, 255, 255, 0.01)", borderRadius: "var(--radius-sm)" }} />
           ))}
 
           {/* Actual day cells */}
@@ -133,16 +134,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 key={`day-${dayNum}`}
                 onClick={() => handleDayClick(dayNum)}
                 style={{
-                  minHeight: 95,
-                  padding: 8,
+                  minHeight: "clamp(50px, 8vw, 90px)",
+                  padding: "4px 6px",
                   borderRadius: "var(--radius-sm)",
-                  background: hasEvents ? "rgba(255, 255, 255, 0.03)" : "rgba(255, 255, 255, 0.01)",
-                  border: hasEvents ? "1px solid rgba(99, 102, 241, 0.25)" : "1px solid var(--border-subtle)",
+                  background: hasEvents ? "rgba(99, 102, 241, 0.12)" : "rgba(255, 255, 255, 0.01)",
+                  border: hasEvents ? "1px solid rgba(99, 102, 241, 0.4)" : "1px solid var(--border-subtle)",
                   cursor: hasEvents ? "pointer" : "default",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
-                  transition: "var(--transition-fast)"
+                  transition: "var(--transition-fast)",
+                  overflow: "hidden"
                 }}
               >
                 <div style={{ fontSize: 12, fontWeight: 700, color: hasEvents ? "var(--text-primary)" : "var(--text-muted)" }}>

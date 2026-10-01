@@ -139,36 +139,36 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14 }}>
         <div>
-          <h1 style={{ fontSize: 24, margin: 0, display: "flex", alignItems: "center", gap: 12 }}>
-            <Users size={24} style={{ color: "var(--primary)" }} />
+          <h1 style={{ fontSize: 22, margin: 0, display: "flex", alignItems: "center", gap: 10 }}>
+            <Users size={22} style={{ color: "var(--primary)" }} />
             <span>Friends & Groups</span>
           </h1>
-          <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
+          <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
             Manage recipient contacts, custom groups, and channel preferences.
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           <a
             href="http://localhost:8000/api/v1/friends/export"
             download="wishmail_friends.csv"
             className="btn-secondary"
-            style={{ fontSize: 13 }}
+            style={{ fontSize: 12, padding: "8px 12px" }}
           >
-            <Download size={14} />
-            <span>Export Friends (CSV)</span>
+            <Download size={13} />
+            <span>Export CSV</span>
           </a>
 
           {activeTab === "friends" ? (
-            <button className="btn-primary" onClick={handleOpenAddFriend} style={{ fontSize: 13 }}>
-              <UserPlus size={15} />
+            <button className="btn-primary" onClick={handleOpenAddFriend} style={{ fontSize: 12, padding: "8px 14px" }}>
+              <UserPlus size={14} />
               <span>Add Friend</span>
             </button>
           ) : (
-            <button className="btn-primary" onClick={() => setIsGroupModalOpen(true)} style={{ fontSize: 13 }}>
-              <FolderPlus size={15} />
+            <button className="btn-primary" onClick={() => setIsGroupModalOpen(true)} style={{ fontSize: 12, padding: "8px 14px" }}>
+              <FolderPlus size={14} />
               <span>Create Group</span>
             </button>
           )}
@@ -176,13 +176,13 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 10, borderBottom: "1px solid var(--border-subtle)", paddingBottom: 12 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, borderBottom: "1px solid var(--border-subtle)", paddingBottom: 10 }}>
         <button
           onClick={() => setActiveTab("friends")}
           style={{
-            padding: "8px 16px",
+            padding: "8px 14px",
             borderRadius: "var(--radius-sm)",
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 600,
             background: activeTab === "friends" ? "rgba(99, 102, 241, 0.15)" : "transparent",
             color: activeTab === "friends" ? "#ffffff" : "var(--text-secondary)",
@@ -195,9 +195,9 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
         <button
           onClick={() => setActiveTab("groups")}
           style={{
-            padding: "8px 16px",
+            padding: "8px 14px",
             borderRadius: "var(--radius-sm)",
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 600,
             background: activeTab === "groups" ? "rgba(99, 102, 241, 0.15)" : "transparent",
             color: activeTab === "groups" ? "#ffffff" : "var(--text-secondary)",
@@ -212,7 +212,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
       {activeTab === "friends" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Filters */}
-          <div className="glass-card" style={{ padding: "14px 18px", display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 14 }}>
+          <div className="glass-card" style={{ padding: "12px 14px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
             <div style={{ position: "relative" }}>
               <Search size={15} style={{ position: "absolute", left: 12, top: 12, color: "var(--text-muted)" }} />
               <input
@@ -220,12 +220,12 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
                 placeholder="Search by name, email, or notes..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ paddingLeft: 36 }}
+                style={{ paddingLeft: 36, fontSize: 13 }}
               />
             </div>
 
             <div>
-              <select value={selectedGroup} onChange={(e) => setSelectedGroup(e.target.value)}>
+              <select value={selectedGroup} onChange={(e) => setSelectedGroup(e.target.value)} style={{ fontSize: 13 }}>
                 <option value="">All Groups</option>
                 {groups.map((g) => (
                   <option key={g.id} value={g.name}>{g.name}</option>
@@ -234,7 +234,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
             </div>
 
             <div>
-              <select value={selectedRelationship} onChange={(e) => setSelectedRelationship(e.target.value)}>
+              <select value={selectedRelationship} onChange={(e) => setSelectedRelationship(e.target.value)} style={{ fontSize: 13 }}>
                 <option value="">All Relationships</option>
                 <option value="Close Friend">Close Friend</option>
                 <option value="College Friends">College Friends</option>
@@ -246,8 +246,8 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
 
           {/* Table */}
           <div className="glass-card" style={{ overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+            <div className="table-responsive" style={{ margin: 0 }}>
+              <table style={{ width: "100%", minWidth: 620, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: "rgba(255, 255, 255, 0.02)", borderBottom: "1px solid var(--border-subtle)", color: "var(--text-muted)", textTransform: "uppercase" }}>
                     <th style={{ padding: "12px 16px" }}>Friend</th>

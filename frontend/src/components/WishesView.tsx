@@ -125,59 +125,62 @@ export const WishesView: React.FC<WishesViewProps> = ({
         <div style={{
           display: "flex",
           alignItems: "center",
-          gap: 12,
-          padding: "8px 16px",
+          flexWrap: "wrap",
+          gap: 10,
+          padding: "8px 12px",
           background: "rgba(255, 255, 255, 0.03)",
           border: "1px solid var(--border-subtle)",
           borderRadius: "var(--radius-sm)"
         }}>
           <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Dispatch Mode:</span>
-          <button
-            onClick={() => onToggleAutoSend(false)}
-            style={{
-              padding: "4px 10px",
-              borderRadius: "var(--radius-sm)",
-              fontSize: 12,
-              fontWeight: 600,
-              background: !autoSendMode ? "var(--status-info-bg)" : "transparent",
-              color: !autoSendMode ? "#60a5fa" : "var(--text-muted)",
-              border: !autoSendMode ? "1px solid rgba(59, 130, 246, 0.4)" : "1px solid transparent"
-            }}
-          >
-            APPROVAL MODE (Safe)
-          </button>
-          <button
-            onClick={() => onToggleAutoSend(true)}
-            style={{
-              padding: "4px 10px",
-              borderRadius: "var(--radius-sm)",
-              fontSize: 12,
-              fontWeight: 600,
-              background: autoSendMode ? "var(--status-success-bg)" : "transparent",
-              color: autoSendMode ? "#34d399" : "var(--text-muted)",
-              border: autoSendMode ? "1px solid rgba(16, 185, 129, 0.4)" : "1px solid transparent"
-            }}
-          >
-            AUTO SEND MODE
-          </button>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            <button
+              onClick={() => onToggleAutoSend(false)}
+              style={{
+                padding: "5px 10px",
+                borderRadius: "var(--radius-sm)",
+                fontSize: 12,
+                fontWeight: 600,
+                background: !autoSendMode ? "var(--status-info-bg)" : "transparent",
+                color: !autoSendMode ? "#60a5fa" : "var(--text-muted)",
+                border: !autoSendMode ? "1px solid rgba(59, 130, 246, 0.4)" : "1px solid transparent"
+              }}
+            >
+              APPROVAL MODE (Safe)
+            </button>
+            <button
+              onClick={() => onToggleAutoSend(true)}
+              style={{
+                padding: "5px 10px",
+                borderRadius: "var(--radius-sm)",
+                fontSize: 12,
+                fontWeight: 600,
+                background: autoSendMode ? "var(--status-success-bg)" : "transparent",
+                color: autoSendMode ? "#34d399" : "var(--text-muted)",
+                border: autoSendMode ? "1px solid rgba(16, 185, 129, 0.4)" : "1px solid transparent"
+              }}
+            >
+              AUTO SEND MODE
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Tabs: Pending Approvals & All Occasions */}
-      <div style={{ display: "flex", gap: 10, borderBottom: "1px solid var(--border-subtle)", paddingBottom: 12 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, borderBottom: "1px solid var(--border-subtle)", paddingBottom: 10 }}>
         <button
           onClick={() => setActiveSubTab("pending")}
           style={{
-            padding: "8px 16px",
+            padding: "8px 14px",
             borderRadius: "var(--radius-sm)",
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 600,
             background: activeSubTab === "pending" ? "rgba(99, 102, 241, 0.15)" : "transparent",
             color: activeSubTab === "pending" ? "#ffffff" : "var(--text-secondary)",
             border: activeSubTab === "pending" ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid transparent",
             display: "flex",
             alignItems: "center",
-            gap: 8
+            gap: 6
           }}
         >
           <Clock size={15} />
@@ -192,22 +195,27 @@ export const WishesView: React.FC<WishesViewProps> = ({
         <button
           onClick={() => setActiveSubTab("occasions")}
           style={{
-            padding: "8px 16px",
+            padding: "8px 14px",
             borderRadius: "var(--radius-sm)",
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 600,
             background: activeSubTab === "occasions" ? "rgba(99, 102, 241, 0.15)" : "transparent",
             color: activeSubTab === "occasions" ? "#ffffff" : "var(--text-secondary)",
             border: activeSubTab === "occasions" ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid transparent",
             display: "flex",
             alignItems: "center",
-            gap: 8
+            gap: 6
           }}
         >
           <Calendar size={15} />
-          <span>Monitored Occasions ({occasions.length})</span>
+          <span>All Occasions</span>
+          <span style={{ background: "rgba(255, 255, 255, 0.1)", fontSize: 11, padding: "1px 6px", borderRadius: 999 }}>
+            {occasions.length}
+          </span>
         </button>
       </div>
+
+
 
       {/* Subtab 1: Pending Approvals Queue */}
       {activeSubTab === "pending" && (
