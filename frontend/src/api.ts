@@ -2,7 +2,14 @@
  * WishMail AI — API Client for FastAPI backend.
  */
 
-const API_BASE = "http://localhost:8000/api/v1";
+const getApiBase = () => {
+  if (typeof window !== "undefined" && window.location.hostname) {
+    return `http://${window.location.hostname}:8000/api/v1`;
+  }
+  return "http://localhost:8000/api/v1";
+};
+
+const API_BASE = getApiBase();
 
 export interface FriendGroup {
   id: number;
