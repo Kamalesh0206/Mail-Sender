@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: wishes_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: wishes_user
+      POSTGRES_PASSWORD: wishes_password
+      POSTGRES_DB: wishes_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wishes_user -d wishes_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wishes_backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://wishes_user:wishes_password@postgres:5432/wishes_db
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=http://localhost:8000/api/v1/auth/google/callback
+      - FRONTEND_URL=http://localhost:5173
+      - SECRET_KEY=${SECRET_KEY:-wishes_secret_key_change_in_production_32bytes_min!}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-5vVq7X7n_F7sZl8H_vJ4Y6vV-qX7n_F7sZl8HvJ4Y6s=}
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
