@@ -1,8 +1,10 @@
-"""FastAPI Main Application Entrypoint for AI Birthday & Wishes Email Agent."""
+"""FastAPI Main Application Entrypoint for WishMail AI.
+
+Tagline: Personal wishes. Meaningful quotes. Automatically delivered.
+"""
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import logging
 
@@ -11,10 +13,14 @@ from backend.database.session import init_db
 from backend.scheduler.daily_scheduler import start_scheduler, shutdown_scheduler
 from backend.routers import (
     friends_router,
-    wishes_router,
+    groups_router,
+    occasions_router,
+    quotes_router,
+    calendar_router,
+    history_router,
+    dashboard_router,
     auth_router,
-    settings_router,
-    stats_router
+    settings_router
 )
 
 # Setup logging
@@ -22,17 +28,17 @@ logging.basicConfig(
     level=logging.INFO if not settings.DEBUG else logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
-logger = logging.getLogger("email_agent")
+logger = logging.getLogger("wishmail")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan context manager handling startup and shutdown."""
-    logger.info("Initializing database tables and defaults...")
+    logger.info("Initializing WishMail AI database tables and default groups...")
     init_db()
 
     if settings.SCHEDULER_ENABLED:
-        logger.info("Starting background scheduler...")
+        logger.info("Starting background scheduler in Asia/Kolkata timezone...")
         start_scheduler()
 
     yield
@@ -43,9 +49,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title=settings.APP_NAME,
+    title="WishMail AI",
     version=settings.APP_VERSION,
-    description="Production-ready AI Birthday & Wishes Email Agent using Google Gemini & Gmail API.",
+    description="Personal wishes. Meaningful quotes. Automatically delivered.",
     lifespan=lifespan,
     docs_url=f"{settings.API_V1_PREFIX}/docs",
     redoc_url=f"{settings.API_V1_PREFIX}/redoc",
@@ -69,18 +75,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register API Routers
-app.include_router(stats_router, prefix=settings.API_V1_PREFIX)
-app.include_router(friends_router, prefix=settings.API_V1_PREFIX)
-app.include_router(wishes_router, prefix=settings.API_V1_PREFIX)
-app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
-app.include_router(settings_router, prefix=settings.API_V1_PREFIX)
+# Register API Routers under /api/v1
+routers = [
+    dashboard_router,
+    friends_router,
+    groups_router,
+    occasions_router,
+    quotes_router,
+    calendar_router,
+    history_router,
+    auth_router,
+    settings_router
+]
+
+for r in routers:
+    app.include_router(r, prefix=settings.API_V1_PREFIX)
+    # Also include at root level to satisfy endpoints like GET /dashboard, GET /calendar, etc.
+    app.include_router(r)
 
 
 @app.get("/")
 def root():
     return {
-        "app": settings.APP_NAME,
+        "app": "WishMail AI",
+        "tagline": "Personal wishes. Meaningful quotes. Automatically delivered.",
         "version": settings.APP_VERSION,
         "status": "healthy",
         "docs": f"{settings.API_V1_PREFIX}/docs"

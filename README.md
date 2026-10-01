@@ -1,101 +1,196 @@
-# 🎂 WishesAI — Production-Ready AI Birthday & Wishes Email Agent
+# WishMail AI
+
+> **"Personal wishes. Meaningful quotes. Automatically delivered."**
 
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/Frontend-React_19_+_TypeScript-61DAFB.svg?logo=react)](https://react.dev)
 [![Gemini](https://img.shields.io/badge/AI-Google_Gemini_Direct_API-4285F4.svg?logo=google)](https://aistudio.google.com)
 [![Gmail API](https://img.shields.io/badge/Email-Gmail_API_(OAuth_2.0)-EA4335.svg?logo=gmail)](https://developers.google.com/gmail/api)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL_/_SQLite-336791.svg?logo=postgresql)](https://www.postgresql.org)
-[![Scheduler](https://img.shields.io/badge/Scheduler-APScheduler-blue.svg)](https://apscheduler.readthedocs.io)
+[![Scheduler](https://img.shields.io/badge/Scheduler-APScheduler_Asia/Kolkata-blue.svg)](https://apscheduler.readthedocs.io)
 
-An autonomous AI agent that detects when your friends, family, or colleagues have a birthday, anniversary, or special occasion today and sends them a warm, personalized email via the official Gmail API powered directly by Google Gemini AI.
-
----
-
-## 🌟 Key Highlights
-
-1. **Direct Google Gemini API Integration**: Zero dependencies on heavy frameworks like CrewAI or LangChain. Crafts personalized, contextual wishes taking into account relationship, personal notes, hobbies, and tone.
-2. **Secure Gmail API Integration (Google OAuth 2.0)**:
-   - Requests minimal necessary scopes (`gmail.send` and `userinfo.email`).
-   - Never asks for or stores user Gmail passwords.
-   - Encrypts OAuth refresh tokens at rest with AES-128 Fernet keys.
-   - Auto-refreshes expired access tokens seamlessly.
-3. **Approval vs Auto Mode**:
-   - **APPROVAL MODE (Default)**: Automatically prepares drafts at 8:00 AM every morning and holds them in an intuitive web Approval Queue. You can review, edit, change tones, and 1-click send with celebratory confetti.
-   - **AUTO MODE**: Autonomous hands-free dispatch.
-4. **Duplicate Protection Constraint**:
-   - Database constraint `UNIQUE (friend_id, occasion_type, year)` strictly prevents sending the same birthday or occasion email more than once in the same calendar year.
-5. **Extensible Occasion Architecture**:
-   - Plug-and-play strategy handlers for:
-     - 🎂 **Birthdays**
-     - 💍 **Anniversaries**
-     - 💼 **Work Anniversaries** (milestone year calculations)
-     - 🪔 **Festivals**
-     - ✨ **Custom Celebrations**
-6. **Built-in Daily Automation**:
-   - Background APScheduler cron job runs daily at your chosen time (default `08:00 AM`). Dynamically reschedules when changed in settings without restarting the server.
-7. **Production-Grade Dashboard**:
-   - Real-time stat cards, Today's Occasions radar, 30-Day Upcoming Countdown, Audit history with Gmail Message IDs, Friend Management, and Test Email sender.
+WishMail AI is a production-ready AI email agent that automatically sends emails to friends through Gmail.
 
 ---
 
-## 🏗️ Project Architecture
+## 1. Core Architecture
+
+The application has **ONLY TWO CORE FUNCTIONS**:
+
+1. **💌 WISHES**: Occasion-based (Birthday, Anniversary, Custom Occasions) personalized AI messages generated directly via Google Gemini API.
+2. **💬 QUOTES**: User-provided quotes scheduled and delivered to individual friends or groups.
+   - **Strict Verbatim Rule**: The system **NEVER** rewrites, paraphrases, alters words, or changes grammar in user-provided quotes. The quote remains exactly as entered. AI optionally crafts only the greeting, introduction, and closing.
 
 ```
-Email_agent/
-├── backend/
-│   ├── config/             # Pydantic Settings & environment validation
-│   ├── database/           # SQLAlchemy models, session engine & initialization
-│   ├── services/           # Encryption (Fernet), Gemini AI & Gmail OAuth services
-│   ├── agents/             # Occasion strategy handlers & Wish Agent orchestrator
-│   ├── scheduler/          # APScheduler daily cron job runner
-│   ├── schemas/            # Pydantic request/response schemas
-│   ├── routers/            # FastAPI REST endpoints (Friends, Wishes, Auth, Settings, Stats)
-│   └── main.py             # FastAPI entrypoint, CORS, lifespan & router mounts
-├── frontend/
-│   ├── src/
-│   │   ├── components/     # Navbar, DashboardView, ApprovalQueue, Friends, History, Settings
-│   │   ├── api.ts          # Strongly typed REST client
-│   │   ├── App.tsx         # Root state & view controller
-│   │   └── index.css       # Slate & Indigo glassmorphism design system
-│   └── package.json
-├── database/
-│   ├── schema.sql          # PostgreSQL DDL schema with indexes and constraints
-│   └── seed_data.py        # Database seed script with sample friends
-├── tests/
-│   └── test_agent.py       # Pytest unit & integration test suite
-├── docs/
-│   └── API.md              # Detailed REST API specification
-├── docker-compose.yml      # Multi-container orchestration (Postgres + Backend)
-├── Dockerfile              # Backend container definition
-├── requirements.txt        # Python dependencies
-└── .env.example            # Environment configuration template
+                    WISHMAIL AI
+                         |
+             +-----------+-----------+
+             |                       |
+          WISHES                  QUOTES
+             |                       |
+      Occasion-based          User-provided
+      AI-generated             exact quotes
+      messages                     |
+             |                 Schedule/Send
+             |                       |
+             +-----------+-----------+
+                         |
+                      Gmail API
+                         |
+                    Send Email
+                         |
+                  Email History
 ```
 
 ---
 
-## 🚀 Quickstart & Local Development
+## 2. Technology Stack
 
-### Prerequisites
-- Python 3.10+
-- Node.js 18+ and npm
-- (Optional) PostgreSQL or Docker
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Lucide Icons, Canvas Confetti.
+- **Backend**: Python 3.10+, FastAPI, Pydantic v2.
+- **Database**: PostgreSQL / SQLite, SQLAlchemy ORM (with 10 normalized tables).
+- **AI**: Google Gemini API directly (`google-genai` / `google-generativeai`). *No LangChain, no CrewAI.*
+- **Email**: Gmail API with Google OAuth 2.0 (token encryption via AES-128 Fernet). Zero Gmail passwords stored.
+- **Scheduler**: APScheduler with `Asia/Kolkata` default timezone and dynamic rescheduling.
 
-### Step 1: Clone & Configure Environment
+---
 
+## 3. Core Modules & Features
+
+### 🏠 Main Dashboard
+- **7 Metric Cards**: Today's Wishes, Today's Quotes, Upcoming Wishes, Upcoming Quotes, Emails Sent, Pending Approval, Failed Emails.
+- **TODAY'S SCHEDULE Table**:
+  `Time | Type | Recipient | Status`
+  (e.g., `08:00 AM | Birthday Wish | Arun | Scheduled`)
+
+### 👥 Friend & Group Management
+- Fields: Name, Email, Birthday, Anniversary, Relationship, Groups, Personal Notes, Active/Inactive, Enable Wishes, Enable Quotes.
+- Groups: Close Friends, College Friends, Office Friends, Family, All Friends.
+- Actions: Add, Edit, Delete, Search, Filter, CSV Export.
+
+### 💌 Wishes Module & AI Engine
+- Generic occasion architecture (Birthdays, Anniversaries, Custom Occasions).
+- Contextual Gemini generation taking friend name, occasion, relationship, personal notes, and preferred tone (Friendly, Casual, Emotional, Funny, Professional).
+- **Two Delivery Modes**:
+  - **APPROVAL MODE (Default)**: Stages AI drafts in queue for review, inline editing, tone regeneration, and 1-click send.
+  - **AUTO SEND MODE**: Fully automated occasion dispatch.
+- **Duplicate Protection**: Unique `(friend_id, occasion_name, sent_date)` ensures no friend ever receives duplicate emails on the same occasion.
+
+### 💬 Quotes Module
+- **Add Single Quote**: Form with quote text, date, time, recipient (individual, multiple, group, all friends), subject, and personalized introduction switch.
+- **Bulk Quote Upload (Excel / CSV)**:
+  - Supports `.xlsx` and `.csv`.
+  - 3-step validation pipeline: Upload -> Validate all rows -> Show preview (Total Rows, Valid, Invalid with exact row numbers and error descriptions) -> `[Cancel]` or `[Import Valid Quotes]`.
+- **Quick Quote Scheduler**: Paste multi-line quotes and automatically distribute them sequentially (Daily, Weekdays, Weekly, Custom dates).
+- **Quote Preservation Guarantee**: Quotes are kept 100% verbatim.
+
+### 📅 Calendar Module
+- Visual interactive monthly calendar showing scheduled quotes and detected occasions.
+- Detailed modal with full quote preview, time, recipients, status, and Send Now / Cancel actions.
+
+### 📧 Email History & Audit Log
+- Searchable and filterable history: Wishes, Quotes, Sent, Failed, Pending, Approved, Cancelled.
+- Records Gmail Message IDs, recipient emails, delivery timestamps, and failure logs.
+- Built-in retry trigger for failed emails.
+
+### ⚙ Settings
+- Connected Gmail status & disconnect button.
+- Timezone selection (Default: `Asia/Kolkata`).
+- Default send time, default wish tone, sender signature.
+- Auto-send toggles for Wishes and Quotes.
+- Quote greeting & closing templates.
+- Immediate Gmail test email verification tool.
+
+---
+
+## 4. Google Cloud Setup Documentation (Step-by-Step)
+
+Follow these exact steps to configure your environment for Gmail API and Google Gemini:
+
+### Step 1: Create Google Cloud Project
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Click the project dropdown in the top bar and select **New Project**.
+3. Name the project `WishMail AI` and click **Create**.
+4. Make sure your newly created project is selected.
+
+### Step 2: Enable Gmail API
+1. In the navigation menu, go to **APIs & Services** > **Library**.
+2. In the search box, type `Gmail API`.
+3. Click on **Gmail API** and click **Enable**.
+
+### Step 3: Configure OAuth Consent Screen
+1. Navigate to **APIs & Services** > **OAuth consent screen**.
+2. Choose **External** user type (or **Internal** if using Google Workspace). Click **Create**.
+3. Fill in the required fields:
+   - **App name**: `WishMail AI`
+   - **User support email**: Your email address
+   - **Developer contact information**: Your email address
+4. Click **Save and Continue**.
+
+### Step 4: Configure Gmail Scopes
+1. On the **Scopes** page of the consent screen configuration, click **Add or Remove Scopes**.
+2. Add the following scopes:
+   - `https://www.googleapis.com/auth/gmail.send` (Send emails on your behalf)
+   - `https://www.googleapis.com/auth/userinfo.email` (View your email address)
+3. Click **Update** and then **Save and Continue**.
+4. Under **Test users**, click **Add Users** and add your Gmail address (required while the app is in testing status). Click **Save and Continue**.
+
+### Step 5: Create OAuth Client ID
+1. Navigate to **APIs & Services** > **Credentials**.
+2. Click **Create Credentials** > **OAuth client ID**.
+3. Set **Application type** to **Web application**.
+4. Set **Name** to `WishMail AI Web Client`.
+
+### Step 6: Configure Authorized Redirect URI
+1. Under **Authorized redirect URIs**, click **Add URI**.
+2. Enter the callback URL:
+   ```
+   http://localhost:8000/api/v1/auth/google/callback
+   ```
+   *(For production deployment, add your production domain callback URL here).*
+3. Click **Create**.
+4. A dialog will display your **Client ID** and **Client Secret**. Copy both values.
+
+### Step 7: Generate Gemini API Key
+1. Go to [Google AI Studio](https://aistudio.google.com/).
+2. Sign in with your Google account.
+3. Click **Get API key** (or **Create API key**).
+4. Select or create a project and copy your generated Gemini API key.
+
+### Step 8: Configure `.env`
+Create a `.env` file in the project root:
 ```bash
-cd Email_agent
-copy .env.example .env   # On macOS/Linux: cp .env.example .env
+copy .env.example .env
+```
+Fill in your configuration:
+```env
+# Google Gemini API
+GEMINI_API_KEY=AIzaSy...
+DEFAULT_AI_MODEL=gemini-2.5-flash
+
+# Google OAuth 2.0 Credentials
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:8000/api/v1/auth/google/callback
+
+# Database (SQLite default; PostgreSQL supported)
+DATABASE_URL=sqlite:///./wishes.db
+# For PostgreSQL:
+# DATABASE_URL=postgresql://user:password@localhost:5432/wishmail_ai
+
+# Security & Encryption Key (32-byte base64 Fernet key)
+SECRET_KEY=yoursecretkeyhere
+TOKEN_ENCRYPTION_KEY=W31qDkL...=   # Run: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+# App Defaults
+APP_TIMEZONE=Asia/Kolkata
+DEFAULT_SEND_TIME=08:00
+DEFAULT_WISH_TONE=Friendly
+AUTO_SEND_WISHES=False
+AUTO_SEND_QUOTES=True
 ```
 
-Edit `.env` with your API keys:
-- `GEMINI_API_KEY`: Get a free key at [Google AI Studio](https://aistudio.google.com/)
-- `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET`: Get from [Google Cloud Console](https://console.cloud.google.com/)
-
-> **Note**: For zero-configuration local development, `DATABASE_URL` defaults to SQLite (`sqlite:///./wishes.db`). To use PostgreSQL, set:
-> `DATABASE_URL=postgresql://user:password@localhost:5432/wishes_db`
-
-### Step 2: Set Up Backend
-
+### Step 9: Run Backend
 ```bash
 # Create and activate virtual environment
 python -m venv .venv
@@ -104,126 +199,58 @@ python -m venv .venv
 # Install dependencies
 pip install -r requirements.txt
 
-# Seed sample friends (Arun, Priya, Rahul, Divya)
+# Seed initial friends and quotes (Arun, Priya, Rahul, Divya)
 python -m database.seed_data
 
-# Run tests
-pytest tests/test_agent.py
+# Run test suite to verify everything passes
+pytest tests/test_agent.py -v
 
-# Start FastAPI backend
+# Launch FastAPI server
 uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
+API Documentation will be available at: `http://127.0.0.1:8000/api/v1/docs`.
 
-Backend will be active at `http://127.0.0.1:8000`  
-Swagger API Docs available at `http://127.0.0.1:8000/api/v1/docs`
-
-### Step 3: Set Up Frontend
-
-In a separate terminal:
+### Step 10: Run Frontend
+In a new terminal:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+Open `http://localhost:5173` in your browser.
 
-Open your browser to `http://localhost:5173`.
+### Step 11: Connect Gmail
+1. In the sidebar, navigate to **Settings** (or click the warning pill in the sidebar).
+2. Click **Connect Google Account**.
+3. Sign in to your test user Gmail and click **Allow** on the permission screen.
+4. You will be redirected back to WishMail AI with a green **Gmail Connected** badge displaying your email address.
 
----
-
-## 🔑 Google Cloud OAuth & Gmail API Setup Instructions
-
-Follow these steps to connect your Gmail account via Google OAuth 2.0:
-
-1. **Go to Google Cloud Console**:
-   Visit [https://console.cloud.google.com/](https://console.cloud.google.com/) and create a new project (e.g. `Wishes-AI-Agent`).
-
-2. **Enable Gmail API**:
-   - In the sidebar, navigate to **APIs & Services** > **Library**.
-   - Search for **Gmail API** and click **Enable**.
-
-3. **Configure OAuth Consent Screen**:
-   - Navigate to **APIs & Services** > **OAuth consent screen**.
-   - Select **External** (or Internal for Google Workspace users).
-   - Enter App Name: `WishesAI Agent`, and your User support email.
-   - Under **Scopes**, add:
-     - `https://www.googleapis.com/auth/gmail.send`
-     - `https://www.googleapis.com/auth/userinfo.email`
-   - Under **Test users**, add your own Gmail address (since the app is in testing mode).
-
-4. **Create OAuth 2.0 Credentials**:
-   - Navigate to **APIs & Services** > **Credentials**.
-   - Click **Create Credentials** > **OAuth client ID**.
-   - Application Type: **Web application**.
-   - Name: `WishesAI Web Client`.
-   - **Authorized redirect URIs**: Add:
-     `http://localhost:8000/api/v1/auth/google/callback`
-   - Click **Create**. Copy the **Client ID** and **Client Secret**.
-
-5. **Update `.env`**:
-   ```env
-   GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
-   GOOGLE_CLIENT_SECRET=your_client_secret
-   GOOGLE_REDIRECT_URI=http://localhost:8000/api/v1/auth/google/callback
-   ```
-
-6. **Connect via Dashboard**:
-   - Open `http://localhost:5173/settings`.
-   - Click **Connect Google Account**.
-   - Grant permission on Google's consent screen. You will be redirected back with a green "Connected" badge!
-   - Click **Send Test Email** to verify the integration immediately!
+### Step 12: Send Test Email
+1. On the **Settings** page (or by clicking **Send Test Email** in the sidebar), click **Send Test Email**.
+2. Enter a recipient email address.
+3. Click **Send Test Email**.
+4. You will see:
+   `✓ Email sent successfully (Gmail Message ID: ...)`
+   Check the recipient's inbox to confirm delivery!
 
 ---
 
-## 🤖 Google Gemini API Setup Instructions
+## 5. End-to-End Workflow Verification
 
-1. Visit [Google AI Studio](https://aistudio.google.com/).
-2. Sign in with your Google account.
-3. Click **Get API key** > **Create API key**.
-4. Paste the key into `.env`:
-   ```env
-   GEMINI_API_KEY=AIzaSy...
-   DEFAULT_AI_MODEL=gemini-2.5-flash
-   ```
-
-*(If no Gemini API key is configured, the system uses built-in smart templates so local testing never breaks.)*
+1. **Step 1 — Add Friends**: Add contacts in the **Friends & Groups** module with birthdays, anniversaries, and personal notes.
+2. **Step 2 — Connect Gmail**: Authorize Gmail API through Google OAuth 2.0.
+3. **Step 3 — Occasion AI Generation**: On occasion days, Gemini creates personalized drafts held safely in the **Wishes** Approval Queue.
+4. **Step 4 — Add Quotes**: Enter single quotes or upload hundreds via Excel/CSV with the 3-step preview validator.
+5. **Step 5 — Schedule**: Assign dates, times, and target groups.
+6. **Step 6 — Automated Scheduling**: APScheduler checks the schedule daily in `Asia/Kolkata` timezone.
+7. **Step 7 — Dispatch**: Approved wishes and scheduled quotes are dispatched via Gmail API.
+8. **Step 8 — Audit**: Every email is logged in **Email History** with full status and Gmail message ID.
 
 ---
 
-## 🐳 Docker Compose Deployment
-
-To deploy with PostgreSQL in a single command:
+## 6. Docker Deployment
 
 ```bash
 docker compose up -d --build
 ```
-
-This starts:
-- `wishes_postgres`: PostgreSQL 16 container with automatic schema migration
-- `wishes_backend`: FastAPI backend on port 8000
-
----
-
-## 🛡️ Security Features
-
-- **Encrypted Refresh Tokens**: Stored using cryptography Fernet symmetric encryption.
-- **Zero Password Storage**: Uses standard Google OAuth 2.0 authorization code flow.
-- **Email Address Validation**: Verified format checks on all recipients.
-- **Duplicate Prevention**: Strict SQL Unique constraint prevents repeated sends.
-- **Audit Logging**: Every send stores the Gmail message ID and full timestamp.
-
----
-
-## 🧪 Running the Test Suite
-
-```bash
-.venv\Scripts\pytest.exe tests/test_agent.py -v
-```
-
-Tests verify:
-- OAuth token encryption and decryption
-- Friend creation and date queries
-- Duplicate send protection database constraint
-- Gemini AI prompt generation & fallback templates across all 5 tones
-- Daily scan agent workflow
-- Occasion extensible registry
-- Scheduler cron time string parsing
+This orchestrates PostgreSQL and the WishMail AI backend with automatic health checks and persistent volume storage.

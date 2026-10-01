@@ -1,22 +1,25 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Navbar } from "./components/Navbar";
+import { Sidebar } from "./components/Sidebar";
 import { DashboardView } from "./components/DashboardView";
-import { ApprovalQueueView } from "./components/ApprovalQueueView";
+import { WishesView } from "./components/WishesView";
+import { QuotesView } from "./components/QuotesView";
 import { FriendsView } from "./components/FriendsView";
+import { CalendarView } from "./components/CalendarView";
 import { HistoryView } from "./components/HistoryView";
 import { SettingsView } from "./components/SettingsView";
 import { TestEmailModal } from "./components/TestEmailModal";
 import { WishPreviewModal } from "./components/WishPreviewModal";
 import {
   api,
-  DashboardStats,
-  TodayOccasionItem,
-  UpcomingOccasionItem,
+  DashboardOverview,
   Friend,
-  WishItem,
+  FriendGroup,
+  OccasionItem,
+  QuoteScheduleItem,
+  EmailHistoryItem,
   AppSettings
 } from "./api";
-import { CheckCircle2, AlertTriangle, Info, X } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Info, X, Sparkles } from "lucide-react";
 
 interface Toast {
   id: string;
@@ -24,16 +27,21 @@ interface Toast {
   type: "success" | "error" | "info";
 }
 
+type TabType = "dashboard" | "wishes" | "quotes" | "friends" | "calendar" | "history" | "settings";
+
 export function App() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "approvals" | "friends" | "history" | "settings">("dashboard");
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [todayOccasions, setTodayOccasions] = useState<TodayOccasionItem[]>([]);
-  const [upcomingOccasions, setUpcomingOccasions] = useState<UpcomingOccasionItem[]>([]);
+  const [activeTab, setActiveTab] = useState<TabType>("dashboard");
+
+  // Core data states
+  const [dashboard, setDashboard] = useState<DashboardOverview | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
-  const [pendingWishes, setPendingWishes] = useState<WishItem[]>([]);
-  const [history, setHistory] = useState<WishItem[]>([]);
+  const [groups, setGroups] = useState<FriendGroup[]>([]);
+  const [occasions, setOccasions] = useState<OccasionItem[]>([]);
+  const [quoteSchedules, setQuoteSchedules] = useState<QuoteScheduleItem[]>([]);
+  const [history, setHistory] = useState<EmailHistoryItem[]>([]);
   const [settings, setSettings] = useState<AppSettings | null>(null);
 
+  // UI state
   const [isLoading, setIsLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
   const [isTestEmailOpen, setIsTestEmailOpen] = useState(false);
@@ -52,36 +60,36 @@ export function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Load all initial data from backend
+  // Master data loader
   const loadData = useCallback(async () => {
     try {
       const [
-        statsData,
-        todayData,
-        upcomingData,
+        dashData,
         friendsData,
-        pendingData,
+        groupsData,
+        occasionsData,
+        schedulesData,
         historyData,
         settingsData
       ] = await Promise.all([
-        api.getStats().catch(() => null),
-        api.getTodaysOccasions().catch(() => []),
-        api.getUpcomingOccasions().catch(() => []),
+        api.getDashboard().catch(() => null),
         api.getFriends().catch(() => []),
-        api.getPendingWishes().catch(() => []),
-        api.getWishesHistory().catch(() => []),
+        api.getGroups().catch(() => []),
+        api.getOccasions().catch(() => []),
+        api.getQuoteSchedules().catch(() => []),
+        api.getEmailHistory().catch(() => []),
         api.getSettings().catch(() => null)
       ]);
 
-      if (statsData) setStats(statsData);
-      setTodayOccasions(todayData);
-      setUpcomingOccasions(upcomingData);
+      if (dashData) setDashboard(dashData);
       setFriends(friendsData);
-      setPendingWishes(pendingData);
+      setGroups(groupsData);
+      setOccasions(occasionsData);
+      setQuoteSchedules(schedulesData);
       setHistory(historyData);
       if (settingsData) setSettings(settingsData);
     } catch (err: any) {
-      console.error("Error loading application state:", err);
+      console.error("Error loading WishMail AI state:", err);
       addToast("Failed to connect to backend server. Make sure FastAPI is running on port 8000.", "error");
     } finally {
       setIsLoading(false);
@@ -91,11 +99,10 @@ export function App() {
   useEffect(() => {
     loadData();
 
-    // Check for OAuth redirect query parameters
+    // Check for Google OAuth callback parameters in URL
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("oauth") === "success") {
       addToast("Google Account successfully connected with Gmail send permissions! 🎉", "success");
-      // Clean query parameter from URL
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlParams.get("oauth_error")) {
       addToast(`OAuth failed: ${urlParams.get("oauth_error")}`, "error");
@@ -103,7 +110,7 @@ export function App() {
     }
   }, [loadData]);
 
-  // Trigger manual daily scan
+  // Run daily scan across wishes and quotes
   const handleRunScan = async () => {
     setIsScanning(true);
     try {
@@ -117,7 +124,7 @@ export function App() {
         addToast("Occasion check complete. No birthdays or celebrations found for today.", "info");
       } else if (pendingCount > 0) {
         addToast(`Found ${count} occasion(s)! ${pendingCount} wish draft(s) staged in Approval Queue.`, "success");
-        setActiveTab("approvals");
+        setActiveTab("wishes");
       } else if (sentCount > 0) {
         addToast(`Found ${count} occasion(s)! ${sentCount} wish(es) sent automatically via Gmail.`, "success");
       } else {
@@ -130,10 +137,10 @@ export function App() {
     }
   };
 
-  // Approval actions
-  const handleApproveAndSend = async (wishId: number, customSubject?: string, customBody?: string) => {
+  // Wishes Actions
+  const handleApproveWish = async (historyId: number, subject?: string, body?: string) => {
     try {
-      await api.approveAndSendWish(wishId, customSubject, customBody);
+      await api.approveEmail(historyId, subject, body);
       addToast("Wishes email dispatched successfully through Gmail! 🎂✉️", "success");
       await loadData();
     } catch (err: any) {
@@ -142,19 +149,20 @@ export function App() {
     }
   };
 
-  const handleRejectWish = async (wishId: number) => {
+  const handleRejectWish = async (historyId: number) => {
     try {
-      await api.rejectWish(wishId);
+      await api.rejectEmail(historyId);
       addToast("Wish draft skipped and removed from queue.", "info");
       await loadData();
     } catch (err: any) {
       addToast(err.message || "Rejection failed", "error");
+      throw err;
     }
   };
 
-  const handleRegenerateWish = async (wishId: number, tone: string) => {
+  const handleRegenerateWish = async (historyId: number, tone: string) => {
     try {
-      await api.regenerateWish(wishId, tone);
+      await api.regenerateWishContent(historyId, tone);
       addToast(`Draft regenerated with '${tone}' tone via Gemini API! ✨`, "success");
       await loadData();
     } catch (err: any) {
@@ -163,21 +171,94 @@ export function App() {
     }
   };
 
-  const handleRetryFailed = async (wishId: number) => {
+  const handleToggleAutoSend = async (enabled: boolean) => {
     try {
-      await api.retryFailedWish(wishId);
-      addToast("Email retry sent successfully!", "success");
+      await api.updateSettings({ auto_send_wishes: enabled });
+      addToast(
+        enabled
+          ? "Switched to Auto Send Mode: Wishes will send automatically upon detection."
+          : "Switched to Approval Mode: Wishes will require manual review before sending.",
+        "info"
+      );
       await loadData();
     } catch (err: any) {
-      addToast(err.message || "Retry failed", "error");
+      addToast(err.message || "Failed to update mode", "error");
+      throw err;
     }
   };
 
-  // Friend actions
-  const handleAddFriend = async (data: Partial<Friend>) => {
+  const handleCreateOccasion = async (data: any) => {
+    try {
+      await api.createOccasion(data);
+      addToast("Occasion saved successfully!", "success");
+      await loadData();
+    } catch (err: any) {
+      addToast(err.message || "Failed to create occasion", "error");
+      throw err;
+    }
+  };
+
+  const handleDeleteOccasion = async (id: number) => {
+    try {
+      await api.deleteOccasion(id);
+      addToast("Occasion removed.", "info");
+      await loadData();
+    } catch (err: any) {
+      addToast(err.message || "Failed to delete occasion", "error");
+      throw err;
+    }
+  };
+
+  // Quotes Actions
+  const handleScheduleSingleQuote = async (data: any) => {
+    try {
+      await api.scheduleSingleQuote(data);
+      addToast("Quote scheduled successfully! Exact text preserved verbatim.", "success");
+      await loadData();
+    } catch (err: any) {
+      addToast(err.message || "Failed to schedule quote", "error");
+      throw err;
+    }
+  };
+
+  const handleQuickScheduleQuotes = async (data: any) => {
+    try {
+      const resp = await api.quickScheduleQuotes(data);
+      addToast(`Successfully scheduled ${resp.count} sequential quote(s)!`, "success");
+      await loadData();
+    } catch (err: any) {
+      addToast(err.message || "Failed to quick schedule quotes", "error");
+      throw err;
+    }
+  };
+
+  const handleSendQuoteNow = async (scheduleId: number) => {
+    try {
+      await api.sendQuoteNow(scheduleId);
+      addToast("Quote dispatched immediately via Gmail! 🚀", "success");
+      await loadData();
+    } catch (err: any) {
+      addToast(err.message || "Failed to send quote now", "error");
+      throw err;
+    }
+  };
+
+  const handleCancelQuote = async (scheduleId: number) => {
+    try {
+      await api.cancelQuoteSchedule(scheduleId);
+      addToast("Quote schedule cancelled.", "info");
+      await loadData();
+    } catch (err: any) {
+      addToast(err.message || "Failed to cancel quote schedule", "error");
+      throw err;
+    }
+  };
+
+  // Friends & Groups Actions
+  const handleAddFriend = async (data: any) => {
     try {
       await api.createFriend(data);
-      addToast(`Added ${data.name} to monitored occasions!`, "success");
+      addToast(`Added ${data.name} to friend contacts!`, "success");
       await loadData();
     } catch (err: any) {
       addToast(err.message || "Failed to add friend", "error");
@@ -185,7 +266,7 @@ export function App() {
     }
   };
 
-  const handleUpdateFriend = async (id: number, data: Partial<Friend>) => {
+  const handleUpdateFriend = async (id: number, data: any) => {
     try {
       await api.updateFriend(id, data);
       addToast("Friend details updated successfully!", "success");
@@ -199,14 +280,49 @@ export function App() {
   const handleDeleteFriend = async (id: number) => {
     try {
       await api.deleteFriend(id);
-      addToast("Contact removed from registry.", "info");
+      addToast("Friend removed from directory.", "info");
       await loadData();
     } catch (err: any) {
       addToast(err.message || "Failed to delete friend", "error");
+      throw err;
     }
   };
 
-  // Settings actions
+  const handleCreateGroup = async (data: { name: string; description?: string }) => {
+    try {
+      await api.createGroup(data);
+      addToast(`Group '${data.name}' created!`, "success");
+      await loadData();
+    } catch (err: any) {
+      addToast(err.message || "Failed to create group", "error");
+      throw err;
+    }
+  };
+
+  const handleDeleteGroup = async (id: number) => {
+    try {
+      await api.deleteGroup(id);
+      addToast("Friend group deleted.", "info");
+      await loadData();
+    } catch (err: any) {
+      addToast(err.message || "Failed to delete group", "error");
+      throw err;
+    }
+  };
+
+  // History & Retry Actions
+  const handleRetryFailed = async (id: number) => {
+    try {
+      await api.retryEmail(id);
+      addToast("Email retry sent successfully!", "success");
+      await loadData();
+    } catch (err: any) {
+      addToast(err.message || "Retry failed", "error");
+      throw err;
+    }
+  };
+
+  // Settings Actions
   const handleUpdateSettings = async (data: Partial<AppSettings>) => {
     try {
       await api.updateSettings(data);
@@ -230,82 +346,165 @@ export function App() {
     }
   };
 
+  // Extract pending wishes for approval queue
+  const pendingWishesList = history.filter(
+    (h) => h.email_type === "WISH" && h.status === "PENDING"
+  );
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-      {/* Top Navigation */}
-      <Navbar
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg-primary)" }}>
+      {/* Sidebar Navigation */}
+      <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        stats={stats}
+        dashboard={dashboard}
         onRunScan={handleRunScan}
         isScanning={isScanning}
         onOpenTestEmail={() => setIsTestEmailOpen(true)}
       />
 
       {/* Main Content Area */}
-      <main style={{
-        maxWidth: 1300,
-        width: "100%",
-        margin: "0 auto",
-        padding: "36px 24px 60px 24px",
-        flex: 1
-      }}>
-        {activeTab === "dashboard" && (
-          <DashboardView
-            stats={stats}
-            todayOccasions={todayOccasions}
-            upcomingOccasions={upcomingOccasions}
-            onNavigateToApprovals={() => setActiveTab("approvals")}
-            onNavigateToFriends={() => setActiveTab("friends")}
-            onNavigateToSettings={() => setActiveTab("settings")}
-            onPreviewWish={(id) => setPreviewFriendId(id)}
-          />
-        )}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflowX: "hidden" }}>
+        {/* Top Header Bar */}
+        <header style={{
+          height: 60,
+          borderBottom: "1px solid var(--border-subtle)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 32px",
+          background: "rgba(12, 17, 29, 0.8)",
+          backdropFilter: "blur(12px)",
+          position: "sticky",
+          top: 0,
+          zIndex: 40
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 13, color: "var(--text-muted)", textTransform: "capitalize" }}>
+              WishMail AI /
+            </span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", textTransform: "capitalize" }}>
+              {activeTab === "friends" ? "Friends & Groups" : activeTab === "history" ? "Email History" : activeTab}
+            </span>
+          </div>
 
-        {activeTab === "approvals" && (
-          <ApprovalQueueView
-            pendingWishes={pendingWishes}
-            onApproveAndSend={handleApproveAndSend}
-            onRejectWish={handleRejectWish}
-            onRegenerateWish={handleRegenerateWish}
-            isProcessing={isLoading}
-          />
-        )}
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 12,
+              padding: "4px 12px",
+              background: "rgba(255, 255, 255, 0.04)",
+              borderRadius: "var(--radius-full)",
+              border: "1px solid var(--border-subtle)"
+            }}>
+              <Sparkles size={13} style={{ color: "#a5b4fc" }} />
+              <span style={{ color: "var(--text-secondary)" }}>Direct Gemini API</span>
+            </div>
 
-        {activeTab === "friends" && (
-          <FriendsView
-            friends={friends}
-            onAddFriend={handleAddFriend}
-            onUpdateFriend={handleUpdateFriend}
-            onDeleteFriend={handleDeleteFriend}
-            onPreviewWish={(id) => setPreviewFriendId(id)}
-          />
-        )}
+            <button
+              onClick={() => setIsTestEmailOpen(true)}
+              className="btn-secondary"
+              style={{ fontSize: 12, padding: "5px 12px" }}
+            >
+              Test Email
+            </button>
+          </div>
+        </header>
 
-        {activeTab === "history" && (
-          <HistoryView
-            history={history}
-            onRetry={handleRetryFailed}
-            isLoading={isLoading}
-          />
-        )}
+        {/* Tab Views */}
+        <main style={{
+          flex: 1,
+          padding: "32px 36px 64px 36px",
+          maxWidth: 1380,
+          width: "100%",
+          margin: "0 auto"
+        }}>
+          {activeTab === "dashboard" && (
+            <DashboardView
+              data={dashboard}
+              onNavigate={setActiveTab}
+              onRunScan={handleRunScan}
+              isScanning={isScanning}
+            />
+          )}
 
-        {activeTab === "settings" && (
-          <SettingsView
-            settings={settings}
-            onUpdateSettings={handleUpdateSettings}
-            onOpenTestEmail={() => setIsTestEmailOpen(true)}
-            onRefreshAuth={loadData}
-          />
-        )}
-      </main>
+          {activeTab === "wishes" && (
+            <WishesView
+              occasions={occasions}
+              pendingWishes={pendingWishesList}
+              friends={friends}
+              autoSendMode={settings?.auto_send_wishes ?? false}
+              onToggleAutoSend={handleToggleAutoSend}
+              onApproveWish={handleApproveWish}
+              onRejectWish={handleRejectWish}
+              onRegenerateWish={handleRegenerateWish}
+              onCreateOccasion={handleCreateOccasion}
+              onDeleteOccasion={handleDeleteOccasion}
+              onPreviewWish={(id) => setPreviewFriendId(id)}
+              isLoading={isLoading}
+            />
+          )}
+
+          {activeTab === "quotes" && (
+            <QuotesView
+              schedules={quoteSchedules}
+              groups={groups}
+              friends={friends}
+              onScheduleSingle={handleScheduleSingleQuote}
+              onQuickSchedule={handleQuickScheduleQuotes}
+              onSendNow={handleSendQuoteNow}
+              onCancelSchedule={handleCancelQuote}
+              onRefresh={loadData}
+            />
+          )}
+
+          {activeTab === "friends" && (
+            <FriendsView
+              friends={friends}
+              groups={groups}
+              onAddFriend={handleAddFriend}
+              onUpdateFriend={handleUpdateFriend}
+              onDeleteFriend={handleDeleteFriend}
+              onCreateGroup={handleCreateGroup}
+              onDeleteGroup={handleDeleteGroup}
+            />
+          )}
+
+          {activeTab === "calendar" && (
+            <CalendarView
+              onRefresh={loadData}
+              onSendQuoteNow={handleSendQuoteNow}
+              onCancelQuote={handleCancelQuote}
+            />
+          )}
+
+          {activeTab === "history" && (
+            <HistoryView
+              history={history}
+              onRetry={handleRetryFailed}
+              isLoading={isLoading}
+            />
+          )}
+
+          {activeTab === "settings" && (
+            <SettingsView
+              settings={settings}
+              onUpdateSettings={handleUpdateSettings}
+              onOpenTestEmail={() => setIsTestEmailOpen(true)}
+              onRefreshAuth={loadData}
+            />
+          )}
+        </main>
+      </div>
 
       {/* Modals */}
       <TestEmailModal
         isOpen={isTestEmailOpen}
         onClose={() => setIsTestEmailOpen(false)}
         onSendTest={handleSendTestEmail}
-        gmailConnected={stats?.gmail_connected ?? false}
+        gmailConnected={dashboard?.gmail_connected ?? false}
       />
 
       <WishPreviewModal

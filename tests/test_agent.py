@@ -1,4 +1,4 @@
-"""Comprehensive unit and integration test suite for AI Birthday & Wishes Email Agent."""
+"""Comprehensive test suite for WishMail AI — AI Wishes & Quotes Email Agent."""
 
 import pytest
 import datetime
@@ -6,15 +6,22 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 
-from backend.database.models import Base, Friend, WishHistory, AppSetting
+from backend.database.models import (
+    Base,
+    Friend,
+    FriendGroup,
+    FriendGroupMember,
+    Occasion,
+    Quote,
+    QuoteSchedule,
+    EmailHistory,
+    AppSetting
+)
 from backend.services.encryption import encrypt_token, decrypt_token
-from backend.services.gemini_service import gemini_service, _get_fallback_wish
+from backend.services.gemini_service import gemini_service
+from backend.services.quote_service import quote_service
 from backend.agents.wish_agent import WishAgent
-from backend.agents.occasions import get_occasion_handler, OCCASION_HANDLERS
-from backend.scheduler.daily_scheduler import parse_time_string
 
-
-# Test SQLite in-memory database
 TEST_DB_URL = "sqlite:///:memory:"
 
 
@@ -25,18 +32,21 @@ def db_session():
     Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = Session()
 
-    # Seed default AppSetting
     setting = AppSetting(
         id=1,
         gmail_connected=False,
-        automation_mode="APPROVAL",
-        daily_send_time="08:00",
-        default_tone="Friendly",
+        timezone="Asia/Kolkata",
+        default_send_time="08:00",
+        default_wish_tone="Friendly",
+        auto_send_wishes=False,
+        auto_send_quotes=True,
         sender_name="Kamalesh",
-        email_signature="Best wishes,\nKamalesh",
-        ai_model="gemini-2.5-flash"
+        email_signature="Best wishes,\nKamalesh"
     )
     session.add(setting)
+
+    grp = FriendGroup(name="Close Friends", description="Core circle")
+    session.add(grp)
     session.commit()
 
     try:
@@ -47,160 +57,177 @@ def db_session():
 
 
 def test_encryption_and_decryption():
-    """Verify that sensitive OAuth tokens are encrypted and decrypted correctly."""
-    sample_refresh_token = "1//04test_google_oauth_refresh_token_xyz"
-    encrypted = encrypt_token(sample_refresh_token)
-    
-    assert encrypted != sample_refresh_token
-    assert len(encrypted) > 20
-    
-    decrypted = decrypt_token(encrypted)
-    assert decrypted == sample_refresh_token
+    """Verify OAuth token symmetric encryption."""
+    token = "1//04test_google_oauth_refresh_token_wishmail_xyz"
+    enc = encrypt_token(token)
+    assert enc != token
+    assert decrypt_token(enc) == token
 
 
-def test_friend_creation_and_query(db_session):
-    """Verify friend record persistence with occasion and date fields."""
+def test_friend_and_group_association(db_session):
+    """Verify friend creation with birthday, anniversary, and group membership."""
     friend = Friend(
         name="Arun Kumar",
-        email="arun@example.com",
+        email="arun@gmail.com",
+        birthday="05 October",
         birth_month=10,
-        birth_day=1,
-        birth_year=1995,
-        occasion_type="Birthday",
-        relationship_type="Colleague",
-        personal_notes="Loves cycling and coffee",
-        preferred_tone="Funny",
-        is_active=True
+        birth_day=5,
+        anniversary="12 December",
+        anniversary_month=12,
+        anniversary_day=12,
+        relationship="Close Friend",
+        personal_notes="Works as a software engineer and likes technology."
     )
     db_session.add(friend)
     db_session.commit()
     db_session.refresh(friend)
+
+    grp = db_session.query(FriendGroup).first()
+    db_session.add(FriendGroupMember(friend_id=friend.id, group_id=grp.id))
+    db_session.commit()
 
     assert friend.id is not None
-    assert friend.name == "Arun Kumar"
-    assert friend.birth_month == 10
-    assert friend.birth_day == 1
+    assert len(friend.group_memberships) == 1
+    assert friend.group_memberships[0].group.name == "Close Friends"
 
 
-def test_duplicate_protection_constraint(db_session):
-    """Verify requirement 8: database constraint strictly prevents duplicate wish in the same year."""
-    friend = Friend(
-        name="Priya Sharma",
-        email="priya@example.com",
-        birth_month=10,
-        birth_day=1,
-        occasion_type="Birthday",
-        relationship_type="Friend"
-    )
+def test_generic_occasion_model(db_session):
+    """Verify generic Occasion model handles Birthday, Anniversary, and Custom Occasion."""
+    friend = Friend(name="Priya", email="priya@gmail.com")
     db_session.add(friend)
     db_session.commit()
-    db_session.refresh(friend)
 
-    wish1 = WishHistory(
+    occ1 = Occasion(
         friend_id=friend.id,
         occasion_type="Birthday",
-        year=2026,
-        recipient_name=friend.name,
-        recipient_email=friend.email,
-        tone="Friendly",
-        generated_subject="Happy Birthday Priya!",
-        generated_body="Wishing you the best day!",
-        status="SENT",
-        scheduled_for=datetime.date(2026, 10, 1),
-        sent_at=datetime.datetime.now(datetime.timezone.utc)
+        title="Priya's Birthday",
+        date_str="01 October",
+        month=10,
+        day=1
     )
-    db_session.add(wish1)
+    occ2 = Occasion(
+        friend_id=friend.id,
+        occasion_type="Anniversary",
+        title="Priya's Wedding Anniversary",
+        date_str="18 October",
+        month=10,
+        day=18
+    )
+    db_session.add_all([occ1, occ2])
     db_session.commit()
 
-    # Attempting to insert a second wish for same friend, same occasion, same year must violate constraint
-    wish2 = WishHistory(
-        friend_id=friend.id,
-        occasion_type="Birthday",
-        year=2026,
-        recipient_name=friend.name,
-        recipient_email=friend.email,
-        tone="Friendly",
-        generated_subject="Another Birthday Email",
-        generated_body="Duplicate wish attempt",
-        status="PENDING_APPROVAL",
-        scheduled_for=datetime.date(2026, 10, 1)
+    assert db_session.query(Occasion).filter(Occasion.friend_id == friend.id).count() == 2
+
+
+def test_quote_preservation_verbatim():
+    """Verify user-provided quote is strictly preserved verbatim in formatted email."""
+    original_quote = "Success is built one small step at a time."
+    formatted = quote_service.format_quote_email(
+        recipient_name="Arun",
+        quote_text=original_quote,
+        author="Unknown",
+        sender_name="Kamalesh"
     )
-    db_session.add(wish2)
+
+    # Must contain exact quote string
+    assert f'"{original_quote}"' in formatted["body"]
+    assert "Hi Arun," in formatted["body"]
+    assert "Best wishes,\nKamalesh" in formatted["body"]
+
+
+def test_gemini_service_functions():
+    """Verify all 4 required Gemini service functions."""
+    wish = gemini_service.generate_wish("Arun", "Birthday", "Close Friend", "Likes coding", "Friendly")
+    assert "subject" in wish and "body" in wish
+
+    subject = gemini_service.generate_subject("Success is built one small step at a time.", "Arun")
+    assert len(subject) > 0
+
+    greeting = gemini_service.generate_greeting("Arun", "Close Friend")
+    assert greeting == "Hi Arun,"
+
+    intro = gemini_service.generate_email_introduction("Arun", "Close Friend")
+    assert len(intro) > 0
+
+
+def test_duplicate_protection_wishes(db_session):
+    """Verify duplicate protection for wishes: unique (friend_id, occasion_name, sent_date)."""
+    friend = Friend(name="Divya", email="divya@gmail.com")
+    db_session.add(friend)
+    db_session.commit()
+
+    today = datetime.date(2026, 10, 1)
+
+    hist1 = EmailHistory(
+        recipient_name="Divya",
+        recipient_email="divya@gmail.com",
+        email_type="WISH",
+        friend_id=friend.id,
+        occasion_name="Birthday",
+        subject="Happy Birthday Divya!",
+        body="Have a great day!",
+        sent_date=today,
+        status="SENT"
+    )
+    db_session.add(hist1)
+    db_session.commit()
+
+    # Attempt second send on same date
+    hist2 = EmailHistory(
+        recipient_name="Divya",
+        recipient_email="divya@gmail.com",
+        email_type="WISH",
+        friend_id=friend.id,
+        occasion_name="Birthday",
+        subject="Duplicate birthday email",
+        body="Should fail",
+        sent_date=today,
+        status="PENDING"
+    )
+    db_session.add(hist2)
     with pytest.raises(IntegrityError):
         db_session.commit()
-    
     db_session.rollback()
 
 
-def test_fallback_wish_generation_tones():
-    """Verify wish generation produces expected subjects and bodies across all supported tones."""
-    tones = ["Friendly", "Professional", "Funny", "Emotional", "Casual"]
-    for tone in tones:
-        wish = _get_fallback_wish(
-            name="Rahul",
-            occasion="Birthday",
-            relationship="Mentor",
-            tone=tone,
-            personal_notes="Great leader",
-            sender_name="Kamalesh",
-            signature="Best wishes,\nKamalesh"
-        )
-        assert "subject" in wish and len(wish["subject"]) > 5
-        assert "body" in wish and len(wish["body"]) > 20
-        assert "Rahul" in wish["body"] or "Rahul" in wish["subject"]
-
-
-def test_daily_agent_scan_workflow(db_session):
-    """Test full daily scan workflow finding today's birthdays and staging for approval."""
-    today = datetime.date(2026, 10, 1)
-    
-    # Friend 1: Birthday today
-    f1 = Friend(
-        name="Divya",
-        email="divya@example.com",
-        birth_month=10,
-        birth_day=1,
-        occasion_type="Birthday",
-        is_active=True
-    )
-    # Friend 2: Birthday tomorrow
-    f2 = Friend(
-        name="Suresh",
-        email="suresh@example.com",
-        birth_month=10,
-        birth_day=2,
-        occasion_type="Birthday",
-        is_active=True
-    )
-    db_session.add_all([f1, f2])
+def test_duplicate_protection_quotes(db_session):
+    """Verify duplicate protection for quotes: unique (quote_schedule_id, recipient_email, sent_date)."""
+    q = Quote(quote_text="Every day is a new opportunity.")
+    db_session.add(q)
     db_session.commit()
 
-    # Run check for today
-    results = WishAgent.run_daily_check(db=db_session, target_date=today)
-    assert results["found_count"] == 1
-    assert len(results["pending"]) == 1
-    assert results["pending"][0]["name"] == "Divya"
+    today = datetime.date(2026, 10, 1)
+    sc = QuoteSchedule(quote_id=q.id, send_date=today, send_time="08:00")
+    db_session.add(sc)
+    db_session.commit()
 
-    # Verify wish history in database
-    pending_wish = db_session.query(WishHistory).filter(WishHistory.friend_id == f1.id).first()
-    assert pending_wish is not None
-    assert pending_wish.status == "PENDING_APPROVAL"
-    assert pending_wish.year == 2026
+    hist1 = EmailHistory(
+        recipient_name="Rahul",
+        recipient_email="rahul@gmail.com",
+        email_type="QUOTE",
+        quote_id=q.id,
+        quote_schedule_id=sc.id,
+        subject="Today's Thought",
+        body="Every day is a new opportunity.",
+        sent_date=today,
+        status="SENT"
+    )
+    db_session.add(hist1)
+    db_session.commit()
 
-
-def test_occasion_handlers_extensibility():
-    """Verify all occasion handlers exist and produce appropriate milestone titles."""
-    target_date = datetime.date(2026, 10, 1)
-    for key, handler in OCCASION_HANDLERS.items():
-        assert handler.occasion_key == key
-        title = handler.format_celebration_title("Sam", 2020, target_date)
-        assert "Sam" in title
-
-
-def test_parse_scheduler_time():
-    """Verify scheduler time parsing."""
-    h, m = parse_time_string("09:30")
-    assert h == 9 and m == 30
-
-    h_def, m_def = parse_time_string("invalid")
-    assert h_def == 8 and m_def == 0
+    # Duplicate send attempt
+    hist2 = EmailHistory(
+        recipient_name="Rahul",
+        recipient_email="rahul@gmail.com",
+        email_type="QUOTE",
+        quote_id=q.id,
+        quote_schedule_id=sc.id,
+        subject="Today's Thought",
+        body="Duplicate quote",
+        sent_date=today,
+        status="PENDING"
+    )
+    db_session.add(hist2)
+    with pytest.raises(IntegrityError):
+        db_session.commit()
+    db_session.rollback()
